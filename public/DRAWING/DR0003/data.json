@@ -1,0 +1,20 @@
+{
+  "_meta": {
+    "name": "DR0003-主蒸氣壓力控制迴路"
+  },
+  "LC-CSDSH1-2": {
+    "type": "CSD-SH-1-2",
+    "logic": "",
+    "svgFile": "LC-CSDSH1-2.svg"
+  },
+  "PB-CSDSH1-2": {
+    "type": "自訂上傳",
+    "logic": "",
+    "svgFile": "PB-CSDSH1-2.svg"
+  },
+  "PT-MS028Q": {
+    "type": "自訂上傳",
+    "logic": "",
+    "svgFile": "PT-MS028Q.svg"
+  }
+}
