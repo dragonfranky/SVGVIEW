@@ -135,10 +135,9 @@ watch(() => props.isOpen, (newVal) => { if (newVal) resetModalZoom() })
 const fetchedSvgContent = ref('')
 const isInlineSvg = ref(false)
 
-// ✨ 新增：監聽圖紙變化，如果是 SVG 檔案就去後端抓取代碼
-// ✨ 修正：只針對 svgFile 的「字串值」進行監聽，避免物件更新時造成無限重繪與閃爍
+// ✨ 新增：監聽圖紙變化，並解決 SVG 之間的 ID 互相污染問題
 watch(() => props.blockData.svgFile, async (newSvgFile) => {
-  if (!props.isOpen) return; // 確保視窗開啟才執行
+  if (!props.isOpen) return; 
   
   isInlineSvg.value = false;
   fetchedSvgContent.value = '';
@@ -147,7 +146,39 @@ watch(() => props.blockData.svgFile, async (newSvgFile) => {
     try {
       const res = await fetch(`/DRAWING/${props.selectedDrawing}/${newSvgFile}`);
       if (res.ok) {
-        fetchedSvgContent.value = await res.text();
+        let svgText = await res.text();
+        
+        // ==========================================
+        // 核心破解：解決 SVG ID 衝突 (防止被主畫面切斷)
+        // ==========================================
+        // 產生一組 6 位數的隨機後綴碼
+        const suffix = '_' + Math.random().toString(36).substring(2, 8);
+        
+        // 1. 將所有 id="xxx" 改成 id="xxx_後綴"
+        svgText = svgText.replace(/id="([^"]+)"/g, `id="$1${suffix}"`);
+        // 2. 將所有參照 url(#xxx) 改成 url(#xxx_後綴)
+        svgText = svgText.replace(/url\(['"]?#([^)'"]+)['"]?\)/g, `url(#$1${suffix})`);
+        // 3. 將所有的 href="#xxx" 改成 href="#xxx_後綴"
+        svgText = svgText.replace(/href="#([^"]+)"/g, `href="#$1${suffix}"`);
+
+        // ==========================================
+        // 確保長寬自適應 (維持我們之前做的 viewBox 修復)
+        // ==========================================
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(svgText, 'image/svg+xml');
+        const svgEl = doc.documentElement;
+        
+        if (!svgEl.getAttribute('viewBox')) {
+          const w = parseFloat(svgEl.getAttribute('width') || '1000');
+          const h = parseFloat(svgEl.getAttribute('height') || '1000');
+          svgEl.setAttribute('viewBox', `0 0 ${w} ${h}`);
+        }
+        
+        svgEl.removeAttribute('width');
+        svgEl.removeAttribute('height');
+        
+        // 將處理完的乾淨 SVG 存入畫面
+        fetchedSvgContent.value = svgEl.outerHTML;
         isInlineSvg.value = true;
       }
     } catch (error) {
@@ -260,24 +291,26 @@ const startDrag = (e) => {
 }
 .modal-img-wrapper { 
   display: block; 
-  width: 1000px !important;  /* ✨ 鎖定彈出視窗的絕對寬度 */
-  height: auto !important;   /* ✨ 解除原本的 700px 限制，讓長圖自然向下延伸 */
+  width: 1000px !important;  
+  height: auto !important; /* 讓容器高度隨著內部 SVG 自動撐開 */
   object-fit: contain; 
   pointer-events: none; 
   max-width: none !important;
 }
 .active-mode { background-color: #f39c12 !important; color: white !important; border-color: #e67e22 !important; font-weight: bold; }
 
-/* ✨ 讓 v-html 渲染出來的 SVG 撐滿空間 */
+/* ✨ 確保 SVG 完美遵照 viewBox 比例放大縮小 */
 .inline-svg :deep(svg) {
-  width: 100%;
-  height: 100%;
+  width: 100% !important;    /* 撐滿外層的 1000px */
+  height: auto !important;   /* 根據 viewBox 精準計算高度，長圖自然往下長 */
   display: block;
+  overflow: visible !important; 
 }
 
 /* ✨ 1. 解除封印：把 pointer-events 打開，讓滑鼠可以碰到 SVG */
 .inline-svg {
   pointer-events: auto !important; 
+  height: auto !important; /* 確保外層 div 也有足夠高度 */
 }
 
 /* ✨ 2. 確保裡面的文字可以被反白選取，游標變成輸入棒 */
