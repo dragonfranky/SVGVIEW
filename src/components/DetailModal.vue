@@ -261,7 +261,7 @@ const startDrag = (e) => {
 .modal-img-wrapper { 
   display: block; 
   width: 1000px !important;  /* ✨ 鎖定彈出視窗的絕對寬度 */
-  height: 700px !important;  /* ✨ 鎖定彈出視窗的絕對高度 */
+  height: auto !important;   /* ✨ 解除原本的 700px 限制，讓長圖自然向下延伸 */
   object-fit: contain; 
   pointer-events: none; 
   max-width: none !important;
@@ -291,7 +291,7 @@ const startDrag = (e) => {
 /* 讓 v-html 渲染出來的 SVG 撐滿空間 (保留這段) */
 .inline-svg :deep(svg) {
   width: 100%;
-  height: 100%;
+  height: auto !important; /* ✨ 原本是 100%，改為 auto 讓 SVG 維持原本的長寬比 */
   display: block;
 }
 
