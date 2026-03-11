@@ -39,7 +39,10 @@ export function useMainPanZoom() {
 
   const startPan = (e) => {
     if (e.button !== 0) return 
-    
+
+    // ✨ 關鍵修復：無論點擊到什麼元素，只要滑鼠按下去，就先清除「上一次」殘留的拖曳狀態！
+    hasDragged.value = false
+
     // ✨ 新增盤查邏輯：如果點擊的是文字，就直接放行，讓瀏覽器可以原生反白選取！
     const targetTag = e.target.tagName.toLowerCase()
     if (targetTag === 'text' || targetTag === 'tspan') {
@@ -48,7 +51,6 @@ export function useMainPanZoom() {
 
     e.preventDefault()
     isPanning = true
-    hasDragged.value = false 
     startX = e.clientX - translateX.value
     startY = e.clientY - translateY.value
     document.addEventListener('mousemove', pan)
