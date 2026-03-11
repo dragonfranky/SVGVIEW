@@ -23,6 +23,7 @@
         @toggle-annotation="isAnnotationMode = !isAnnotationMode"
         @search="handleSearch"
         @add-drawing="isAddMainModalOpen = true"
+        @print-main="handlePrintMain"
       />
 
       <MainCanvas 
@@ -87,10 +88,11 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, nextTick } from 'vue'
 import { useMainPanZoom } from './composables/usePanZoom'
 import { useAnnotations } from './composables/useAnnotations'
 import { useSystemData } from './composables/useSystemData'
+import { usePrint } from './composables/usePrint' // ✨ 1. 匯入列印模組
 import DetailModal from './components/DetailModal.vue'
 import AddDrawingModal from './components/AddDrawingModal.vue'
 import { useSearch } from './composables/useSearch'
@@ -109,6 +111,15 @@ const selectDrawingFromSidebar = (drawingId) => {
 // 1. 初始化：主畫面與彈出視窗的拖曳縮放邏輯
 // ==========================================
 const { scale, translateX, translateY, hasDragged, panZoomStyle, resetZoom, handleWheel, startPan } = useMainPanZoom();
+
+// ==========================================
+// ✨ 初始化：列印模組
+// ==========================================
+const { printMain } = usePrint();
+const handlePrintMain = () => {
+  printMain(resetZoom); // 把重設視角的方法傳進去給模組執行
+};
+
 // ==========================================
 // 2. 初始化：系統資料與 API 邏輯
 // ==========================================
@@ -199,49 +210,9 @@ onMounted(async () => {
 })
 </script>
 
-<style>
-body { margin: 0; padding: 0; }
-</style>
-
 <style scoped>
 .app-container { font-family: sans-serif; background: #f5f5f5; height: 100vh; box-sizing: border-box; display: flex; flex-direction: row; }
 .icon-btn { background: none; border: 1px solid #ddd; padding: 5px 10px; margin-left: 5px; border-radius: 4px; cursor: pointer; font-size: 14px; background: white; }
 .icon-btn:hover { background: #f0f0f0; }
 
-
-/* ==========================================
-   ✨ 列印專用 CSS (只印出圖紙區塊) ✨
-   ========================================== */
-@media print {
-  /* 1. 設定預設為橫向列印，並加上適當邊界 */
-  @page {
-    size: landscape;
-    margin: 10mm;
-  }
-  /* 2. 隱藏所有不需要印出來的 UI 介面 */
-  .reset-zoom-btn {
-    display: none !important;
-  }
-  /* 3. 解除外框限制，讓畫布撐滿整張紙 */
-  .app-container {
-    height: auto !important;
-    display: block !important;
-    background: white !important;
-  }
-    .main-workspace {
-    width: 100% !important;
-    height: auto !important;
-    display: block !important;
-  }
-  .main-content {
-    box-shadow: none !important;
-    border: none !important;
-  }
-  /* 4. 確保圖紙底色是乾淨的白色 */
-  .svg-viewport {
-    overflow: visible !important;
-    height: auto !important;
-    background: white !important;
-  }
-}
 </style>

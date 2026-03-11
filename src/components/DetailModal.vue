@@ -2,6 +2,7 @@
   <Teleport to="body">
     <div
       v-if="isOpen"
+      ref="modalRef"
       class="modal detail-modal"
       :style="{ zIndex: zIndex, top: localTop, left: localLeft }"
       @mousedown="$emit('focus')"
@@ -44,6 +45,7 @@
               💬 {{ isModalAnnotationMode ? '取消標註' : '新增對話框' }}
             </button>
             <button @click="resetModalZoom" class="icon-btn" title="重設視角">🏠 重設</button>
+            <button @click="handlePrintModal" class="icon-btn" title="列印此圖面" style="margin-right: 5px;">🖨️ 列印</button>
             <label class="icon-btn" style="cursor: pointer;">
               ⬆️ 上傳圖面
               <input type="file" @change="onFileChange" accept="image/svg+xml, image/png, image/jpeg" style="display: none;" />
@@ -97,10 +99,11 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { useModalPanZoom } from '../composables/usePanZoom'
 import AnnotationLayer from './AnnotationLayer.vue'
 import { useAnnotations } from '../composables/useAnnotations'
+import { usePrint } from '../composables/usePrint' // ✨ 1. 匯入列印模組
 
 const props = defineProps({
   isOpen: Boolean,
@@ -113,6 +116,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'saveText', 'uploadImage', 'deleteImage', 'imageError', 'focus'])
+
+// ✨ 新增視窗參考
+const modalRef = ref(null)
 
 // 本地座標變數 (拖曳用)
 const localTop = ref(props.top)
@@ -128,6 +134,15 @@ const {
   handleModalWheel,
   startModalPan
 } = useModalPanZoom()
+
+// ==========================================
+// ✨ 初始化：列印模組
+// ==========================================
+const { printModal } = usePrint();
+const handlePrintModal = () => {
+  // 把重設視角的方法，以及這個視窗的 DOM 元素傳給模組
+  printModal(resetModalZoom, modalRef.value); 
+};
 
 watch(() => props.isOpen, (newVal) => { if (newVal) resetModalZoom() })
 

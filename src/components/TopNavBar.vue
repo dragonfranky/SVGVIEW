@@ -55,11 +55,13 @@ const emit = defineEmits([
   'delete-drawing',
   'toggle-annotation',
   'search',
-  'add-drawing'
+  'add-drawing',
+  'print-main' // ✨ 新增這行
 ])
 
+// ✨ 修改列印函數，改為通知主系統
 const handlePrint = () => {
-  window.print();
+  emit('print-main');
 };
 
 // 處理下拉選單切換
